@@ -2,7 +2,7 @@ const express = require("express");
 const controlador = require("../controladores/reservas");
 const {
   validarId,
-  validarFiltroSala,
+  validarConsultaReservas,
   validarCreacionReserva,
   validarReemplazoReserva,
   validarActualizacionParcial,
@@ -11,7 +11,7 @@ const {
 function crearRouterReservasApi() {
   const router = express.Router();
 
-  router.get("/", validarFiltroSala, controlador.listarApi);
+  router.get("/", validarConsultaReservas, controlador.listarApi);
   router.post("/", validarCreacionReserva, controlador.crearApi);
 
   router.get("/:id", validarId, controlador.obtenerPorIdApi);

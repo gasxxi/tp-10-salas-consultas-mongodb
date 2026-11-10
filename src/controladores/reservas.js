@@ -20,11 +20,12 @@ async function obtenerEstado(req, res, next) {
   }
 }
 
-// Endpoints API REST (CRUD)
+// Endpoints API REST
 async function listarApi(req, res, next) {
   try {
-    const reservas = await servicio.listar(req.query);
-    res.status(200).json(reservas);
+    const { sala, orden, pagina, limite } = req.query;
+    const resultado = await servicio.consultar({ sala, orden, pagina, limite });
+    res.status(200).json(resultado);
   } catch (error) {
     next(error);
   }
@@ -87,14 +88,13 @@ async function eliminarApi(req, res, next) {
     if (!eliminada) {
       return res.status(404).json({ error: "Reserva no encontrada." });
     }
-    // De acuerdo a la consigna de la Unidad 9 se exige 204 sin cuerpo
     res.status(204).end();
   } catch (error) {
     next(error);
   }
 }
 
-// Vistas Web HTML
+// Vistas Web HTML (usan listar sin filtros ni cortes)
 async function listarHtml(req, res, next) {
   try {
     const reservas = await servicio.listar();
@@ -157,7 +157,7 @@ module.exports = {
   mostrarFormularioNuevaHtml,
   formularioNueva: mostrarFormularioNuevaHtml,
   crearHtml,
+  crearReserva: crearHtml,
   mostrarDetalleHtml,
-  salasPermitidas: ["Sala Norte", "Sala Sur", "Sala Multimedia"],
-  turnosPermitidos: ["Mañana", "Tarde", "Noche"],
+  detalleReserva: mostrarDetalleHtml,
 };

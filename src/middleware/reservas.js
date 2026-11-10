@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const SALAS_VALIDAS = ["Sala Norte", "Sala Sur", "Sala Multimedia"];
 const TURNOS_VALIDOS = ["Mañana", "Tarde", "Noche"];
 const ESTADOS_VALIDOS = ["pendiente", "confirmada"];
+const ORDENES_VALIDOS = ["estudiante", "personas-asc", "personas-desc"];
+const PARAMETROS_PERMITIDOS = ["sala", "orden", "pagina", "limite"];
 
 function prepararAreaReservas(req, res, next) {
   res.locals.seccion = "Reservas de salas";
@@ -13,23 +15,79 @@ function validarTextoEstricto(valor) {
   return typeof valor === "string" && valor.trim().length > 0;
 }
 
+function validarConsultaReservas(req, res, next) {
+  const claves = Object.keys(req.query);
+
+  // 1. Rechazar parámetros ajenos no permitidos
+  for (const clave of claves) {
+    if (!PARAMETROS_PERMITIDOS.includes(clave)) {
+      return res.status(400).json({
+        error: `El parámetro de consulta '${clave}' no está permitido.`,
+      });
+    }
+  }
+
+  // 2. Validar sala si fue enviada
+  if (req.query.sala !== undefined) {
+    if (typeof req.query.sala !== "string" || req.query.sala.trim() === "") {
+      return res.status(400).json({
+        error: "El parámetro 'sala' debe ser un texto único no vacío.",
+      });
+    }
+  }
+
+  // 3. Validar orden si fue enviado
+  if (req.query.orden !== undefined) {
+    if (
+      typeof req.query.orden !== "string" ||
+      !ORDENES_VALIDOS.includes(req.query.orden.trim())
+    ) {
+      return res.status(400).json({
+        error:
+          "El parámetro 'orden' debe ser 'estudiante', 'personas-asc' o 'personas-desc'.",
+      });
+    }
+  }
+
+  // 4. Validar pagina (rango 1 a 1000)
+  if (req.query.pagina !== undefined) {
+    if (typeof req.query.pagina !== "string") {
+      return res
+        .status(400)
+        .json({ error: "El parámetro 'pagina' debe ser un único valor." });
+    }
+    const pagNum = Number(req.query.pagina.trim());
+    if (!Number.isInteger(pagNum) || pagNum < 1 || pagNum > 1000) {
+      return res.status(400).json({
+        error: "El parámetro 'pagina' debe ser un entero entre 1 y 1000.",
+      });
+    }
+  }
+
+  // 5. Validar limite (rango 1 a 20)
+  if (req.query.limite !== undefined) {
+    if (typeof req.query.limite !== "string") {
+      return res
+        .status(400)
+        .json({ error: "El parámetro 'limite' debe ser un único valor." });
+    }
+    const limNum = Number(req.query.limite.trim());
+    if (!Number.isInteger(limNum) || limNum < 1 || limNum > 20) {
+      return res.status(400).json({
+        error: "El parámetro 'limite' debe ser un entero entre 1 y 20.",
+      });
+    }
+  }
+
+  next();
+}
+
 function validarId(req, res, next) {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({
       error: "El identificador proporcionado no tiene un formato válido.",
     });
-  }
-  next();
-}
-
-function validarFiltroSala(req, res, next) {
-  if (req.query.sala !== undefined) {
-    if (typeof req.query.sala !== "string" || req.query.sala.trim() === "") {
-      return res.status(400).json({
-        error: "El parámetro 'sala' debe ser un único texto válido.",
-      });
-    }
   }
   next();
 }
@@ -94,9 +152,7 @@ function validarCreacionReserva(req, res, next) {
 }
 
 function validarReemplazoReserva(req, res, next) {
-  // Ejecuta la validación de los 6 campos base
   validarCreacionReserva(req, res, () => {
-    // Si en el PUT envían el estado, se valida y se incluye
     if (req.body.estado !== undefined) {
       if (!ESTADOS_VALIDOS.includes(req.body.estado)) {
         return res
@@ -108,6 +164,7 @@ function validarReemplazoReserva(req, res, next) {
     next();
   });
 }
+
 function validarActualizacionParcial(req, res, next) {
   if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
     return res.status(400).json({ error: "Cuerpo de solicitud inválido." });
@@ -199,10 +256,10 @@ module.exports = {
   prepararAreaReservas,
   validarReserva: validarCreacionReserva,
   validarCreacionReserva,
+  validarConsultaReservas,
   validarReemplazoReserva,
   validarActualizacionParcial,
   validarId,
-  validarFiltroSala,
   SALAS_VALIDAS,
   TURNOS_VALIDOS,
   salasPermitidas: SALAS_VALIDAS,

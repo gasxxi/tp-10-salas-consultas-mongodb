@@ -1,13 +1,9 @@
 const express = require("express");
-const {
-  listarHtml,
-  formularioNueva,
-  mostrarDetalleHtml,
-  crearHtml,
-} = require("../controladores/reservas");
+const controlador = require("../controladores/reservas");
 const {
   prepararAreaReservas,
   validarReserva,
+  validarId,
 } = require("../middleware/reservas");
 
 function crearRouterReservas() {
@@ -15,10 +11,10 @@ function crearRouterReservas() {
 
   router.use(prepararAreaReservas);
 
-  router.get("/", listarHtml);
-  router.get("/nueva", formularioNueva);
-  router.get("/:id", mostrarDetalleHtml);
-  router.post("/", validarReserva, crearHtml);
+  router.get("/", controlador.listarHtml);
+  router.get("/nueva", controlador.mostrarFormularioNuevaHtml);
+  router.post("/", validarReserva, controlador.crearHtml);
+  router.get("/:id", validarId, controlador.mostrarDetalleHtml);
 
   return router;
 }
